@@ -39,6 +39,10 @@ def add_text(texts, entities, current_text, current_entities, current_entity_tex
     return("", {}, "", "")
  
 
+TRANSLATE_ANNOTATION_LABEL = {'p': 'p', 'l': 'l', 'g': 'l', 'f': 'l', 
+                              'c': 'c', 'd': 'd', 'o': 'o', 'w': 'w', '.': '.'}
+
+
 def read_annotations(data_lines):
     texts = []
     entities = []
@@ -57,6 +61,7 @@ def read_annotations(data_lines):
                 current_entity_text = ""
         else:
             (token_label, token_text) = line.split()
+            token_label = TRANSLATE_ANNOTATION_LABEL[token_label]
             current_text = token_text if current_text == "" else current_text + " " + token_text
             if token_label == ".":
                 if current_entity_label:
@@ -82,7 +87,7 @@ def get_entity_text(tokens, token_id):
         entity_text += " " + tokens[token_id]
     return regex.sub(";$", "", entity_text)
 
-ENTITY_LABELS = {'P': 'p', 'L': 'l', 'G': 'l', 'F': 'l'}
+TRANSLATE_MACHINE_LABEL = {'P': 'p', 'L': 'l', 'G': 'l', 'F': 'l'}
 
 def read_machine_analysis(file_name):
     lines = read_lines_from_file(file_name)
@@ -93,7 +98,7 @@ def read_machine_analysis(file_name):
             current_entities = {}
             for i in range(0, len(tokens)):
                 if tokens[i] in ["PERSON:", "PER:", "LOC:", "GPE:", "FAC:"]:
-                    entity_label = ENTITY_LABELS[tokens[i][0]]
+                    entity_label = TRANSLATE_MACHINE_LABEL[tokens[i][0]]
                     entity_text = get_entity_text(tokens, i+1)
                     current_entities = add_entity(current_entities, entity_label, entity_text)
             entities.append(current_entities)
@@ -139,10 +144,10 @@ for label in ['p', 'l']:
             for token in machine_entities[i][label]:
                 wrong_count[label] += machine_entities[i][label][token]
 
-for label in ['p', 'l']:
+for label in ['l', 'p']:
     precision = round(100 * correct_count[label] /  (correct_count[label] + wrong_count[label]), 1)
     recall = round(100* correct_count[label] /  (correct_count[label] + missing_count[label]), 1)
     f1 = round(2 * precision * recall / (precision + recall), 1)
-    print(f"Precision for label {label}: {precision}% ({correct_count[label] + missing_count[label]})")
-    print(f"Recall for label {label}:    {recall}%")
-    print(f"F1 for label {label}:        {f1}" )
+    print(f"Precision: {precision}% ({label}, {correct_count[label] + missing_count[label]})")
+    print(f"Recall:    {recall}%")
+    print(f"F1:        {f1}" )
