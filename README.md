@@ -43,4 +43,7 @@ The :P-related stats concern Person labels while the :L-related stats concern Lo
 
 |   | System | Time | Precision:P | Recall:P | F1:P | Precision:L | Recall:L | F1:L |
 | - | ------ | ---: | :---------: | :------: | :--: | :---------: | :------: | :--: |
-| 1. | Dandelion | 12.5 sec | 91.7% | 28.7% | 43.7 | 81.8% | 38.3% | 52.2 |
+| 1. | Dandelion     | 12.5 sec | 60.0% | 31.1% | 41.0 | 24.7% | 40.9% | 30.8 |
+| 2. | NameTag 3 (b) |  0.1 sec | 21.1% | 34.9% | 26.3 |  9.8% | 43.2% | 16.0 |
+
+(b) stands for baseline disambiguation system, it guesses the resource uri without using the context
