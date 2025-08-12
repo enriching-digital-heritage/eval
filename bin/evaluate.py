@@ -85,7 +85,7 @@ def get_entity_text(tokens, token_id):
         if regex.search("^[A-Z]+:$", tokens[token_id]):
             break
         entity_text += " " + tokens[token_id]
-    return regex.sub(";$", "", entity_text)
+    return regex.sub("^(\d+\s+)?", "", regex.sub(";$", "", entity_text))
 
 TRANSLATE_MACHINE_LABEL = {'P': 'p', 'L': 'l', 'G': 'l', 'F': 'l'}
 
