@@ -55,7 +55,7 @@ for target_entity_label in ENTITY_LABELS:
                 machine_analysis_list.remove(entity)
             else:
                 missing += 1
-    wrong = len(machine_analysis_list)
+    wrong = len([entity for entity in machine_analysis_list if entity["entity_label"] == target_entity_label])
     if correct + wrong == 0:
         precision = 0
     else:
