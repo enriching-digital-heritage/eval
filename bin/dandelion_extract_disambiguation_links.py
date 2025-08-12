@@ -19,9 +19,10 @@ def read_logfile():
     return dict(zip(log_df["dbpedia_uri"], log_df["wikidata_uri"]))
 
 
-def append_to_logfile(dbpedia_uri, wikidata_uri):
+def append_to_logfile(entity_label, dbpedia_uri, wikidata_uri):
     with open(LOGFILE_NAME, "a") as outfile:
-        pl.DataFrame([{"dbpedia_uri": dbpedia_uri,
+        pl.DataFrame([{"entity_label": entity_label,
+                       "dbpedia_uri": dbpedia_uri,
                        "wikidata_uri": wikidata_uri}]).write_csv(outfile, include_header=False)
         outfile.close()
 
@@ -42,7 +43,7 @@ def find_best_wikidata_link(bindings):
     return wikidata_uri
 
 
-def lookup_wikipedia_uri(dbpedia_uri, logdata_dict):
+def lookup_wikipedia_uri(entity_label, dbpedia_uri, logdata_dict):
     if dbpedia_uri in logdata_dict.keys():
         return logdata_dict[dbpedia_uri]
     sparql.setQuery(f"""
@@ -56,11 +57,11 @@ def lookup_wikipedia_uri(dbpedia_uri, logdata_dict):
     results = sparql.query().convert()
     wikidata_uri = find_best_wikidata_link(results["results"]["bindings"])
     logdata_dict[dbpedia_uri] = wikidata_uri
-    append_to_logfile(dbpedia_uri, wikidata_uri)
+    append_to_logfile(entity_label, dbpedia_uri, wikidata_uri)
     time.sleep(1)
     return wikidata_uri
 
-  
+
 line_nbr = 0
 data = []
 logdata_dict = read_logfile()
@@ -71,18 +72,18 @@ for line in sys.stdin:
     line_data = ast.literal_eval(line.strip())
     if "annotations" in line_data.keys():
         for entity_data in line_data["annotations"]:
-            label = ""
+            entity_label = ""
             if ("http://dbpedia.org/ontology/Location" in entity_data["types"] or 
                "http://dbpedia.org/ontology/Place" in entity_data["types"]):
-                label = "LOC"
+                entity_label = "LOC"
             if ("http://dbpedia.org/ontology/Animal" in entity_data["types"] or
                 "http://dbpedia.org/ontology/Deity" in entity_data["types"]):
-                label = "PER"
-            if label != "":
+                entity_label = "PER"
+            if entity_label != "":
                 dbpedia_uri = entity_data['lod']['dbpedia']
-                wikidata_uri = lookup_wikipedia_uri(dbpedia_uri, logdata_dict)
+                wikidata_uri = lookup_wikipedia_uri(entity_label, dbpedia_uri, logdata_dict)
                 output_df = pl.DataFrame({"line_nbr": line_nbr,
-                                          "entity_label": label,
+                                          "entity_label": entity_label,
                                           "entity_text": entity_data['spot'],
                                           "dbpedia_uri": dbpedia_uri,
                                           "wikidata_uri": wikidata_uri})
