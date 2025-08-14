@@ -76,7 +76,8 @@ for line in sys.stdin:
             if ("http://dbpedia.org/ontology/Location" in entity_data["types"] or 
                "http://dbpedia.org/ontology/Place" in entity_data["types"]):
                 entity_label = "LOC"
-            if ("http://dbpedia.org/ontology/Animal" in entity_data["types"] or
+            if ("http://dbpedia.org/ontology/Person" in entity_data["types"] or
+                "http://dbpedia.org/ontology/Animal" in entity_data["types"] or
                 "http://dbpedia.org/ontology/Deity" in entity_data["types"]):
                 entity_label = "PER"
             if entity_label != "":
