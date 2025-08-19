@@ -10,7 +10,9 @@ Software and results of evaluations in the Lorentz workshop [Enriching Digital H
 | ---- | ----------- | -------- | ---- | ------- | --------- | ----- |
 | Recognition | British Museum | English | 100 texts | 115 | 47 | European Renaissance art |
 | Recognition | Egyptian Museum | English | 100 texts | 177 | 91 | Ancient Egypt |
-| Disambiguation | British Museum | English | 100 texts | 115 | 47 | European Renaissance art |
+| Disambiguation | British Museum | English | 100 texts | 106(+9) | 44(+3) | European Renaissance art |
+
+The British Museum disambiguation dataset contains as many entities as the recognition dataset but for 12 entities (9 PER/3 LOC) there are no links available
 
 ### Systems performance
 
@@ -43,7 +45,8 @@ The :P-related stats concern Person labels while the :L-related stats concern Lo
 
 |   | System | Time | Precision:P | Recall:P | F1:P | Precision:L | Recall:L | F1:L |
 | - | ------ | ---: | :---------: | :------: | :--: | :---------: | :------: | :--: |
-| 1. | Dandelion     | 12.5 sec | 73.9% | 32.1% | 44.8 | 70.4% | 43.2% | 53.5 |
-| 2. | NameTag 3 (b) |  0.1 sec | 33.9% | 34.9% | 34.4 | 43.2% | 43.2% | 43.2 |
+| 1. | NameTag 3 (b) | ~5 min   | 95.9% | 44.3% | 60.6 | 81.8% | 40.9% | 54.5 |
+| 2. | Spacy (trf) + | ~5 min   | 97.7% | 39.6% | 56.4 | 70.8% | 38.6% | 50.0 |
+| 3. | Dandelion     | 12.5 sec | 73.9% | 32.1% | 44.8 | 70.4% | 43.2% | 53.5 |
 
 (b) stands for baseline disambiguation system, it guesses the resource uri without using the context
