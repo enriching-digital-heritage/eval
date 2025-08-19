@@ -14,7 +14,8 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 LOGFILE_NAME = "/home/erikt/projects/enriching/data/wikidata_log.txt"
-SLEEP_TIME = 5
+SLEEP_TIME_GET_LABEL = 30
+SLEEP_TIME_FETCH_PAGE = 5
 
 def read_logfile():
     log_df = pl.read_csv(LOGFILE_NAME)
@@ -26,97 +27,18 @@ def read_logfile():
     return log_dict
 
 
-def append_to_logfile(entity_text, exists_value, wikidata_label, wikidata_lemma, wikidata_id):
+def append_to_logfile(entity_text, exists_value, wikidata_id, wikidata_label, wikidata_lemma, log_dict):
+    log_dict[entity_text] = {"exists_value": "True" if exists_value else "",
+                             "wikidata_label": wikidata_label,
+                             "wikidata_lemma": wikidata_lemma,
+                             "wikidata_id": wikidata_id,
+                             "entity_text": entity_text}
     with open(LOGFILE_NAME, "a") as outfile:
-        pl.DataFrame([{"exists_value": "True" if exists_value else "",
-                       "wikidata_label": wikidata_label,
-                       "wikidata_lemma": wikidata_lemma,
-                       "wikidata_id": wikidata_id,
-                       "entity_text": entity_text}]).write_csv(outfile, include_header=False)
+        pl.DataFrame([log_dict[entity_text]]).write_csv(outfile, include_header=False)
         outfile.close()
 
 
-def make_dbpedia_uri(entity_text):
-    """Convert entity text to DBpedia uri and return it"""
-    page_name = regex.sub(" ", "_", entity_text)
-    return f"https://dbpedia.org/page/{page_name}"
-
-
-def check_dbpedia_redirect(lemma):
-    endpoint = "https://dbpedia.org/sparql"
-    page_name = regex.sub(" ", "_", lemma)
-    query = f"""
-    SELECT ?target ?label WHERE {{
-      <http://dbpedia.org/resource/{page_name}> (dbo:wikiPageRedirects)+ ?target .
-      FILTER NOT EXISTS {{ ?target dbo:wikiPageRedirects ?next . }}
-      OPTIONAL {{ ?target rdfs:label ?label FILTER (lang(?label) = 'en') }}
-    }}
-    LIMIT 1
-    """
-    sparql = SPARQLWrapper(endpoint)
-    sparql.setQuery(query)
-    sparql.setReturnFormat(JSON)
-
-    results = sparql.query().convert()
-    try:
-        target_lemma = results["results"]["bindings"][0]["label"]["value"]
-    except:
-        target_lemma = lemma
-    time.sleep(SLEEP_TIME)
-    return target_lemma
-
-
-def get_dbpedia_entity_label(lemma):
-    endpoint = "https://dbpedia.org/sparql"
-    target_lemma = check_dbpedia_redirect(lemma)
-
-    query = f"""
-        SELECT DISTINCT ?type
-        WHERE {{
-          ?s rdfs:label "{target_lemma}"@en .
-          ?s rdf:type ?type .
-        }}
-    """
-    sparql = SPARQLWrapper(endpoint)
-    sparql.setQuery(query)
-    sparql.setReturnFormat(JSON)
-        
-    results = sparql.query().convert()
-    types = [binding['type']['value'] for binding in results["results"]["bindings"]]
-    if 'http://dbpedia.org/ontology/Person' in types or 'http://dbpedia.org/ontology/Animal' in types or 'http://dbpedia.org/ontology/Deity' in types:
-        entity_label = "PER"
-    elif 'http://dbpedia.org/ontology/Location' in types or 'http://dbpedia.org/ontology/Place' in types:
-        entity_label = "LOC"
-    else:
-        entity_label = ""
-    time.sleep(SLEEP_TIME)
-    return entity_label, target_lemma
-
-
-def get_dbpedia_exists_value(lemma):
-    endpoint = "https://dbpedia.org/sparql"
-    query = f"""
-    ASK WHERE {{
-      ?s rdfs:label "{lemma}"@en .
-    }}
-    """
-    sparql = SPARQLWrapper(endpoint)
-    sparql.setQuery(query)
-    sparql.setReturnFormat(JSON)
-    
-    results = sparql.query().convert()
-    exists_value = results['boolean']
-    return exists_value
-
-
-    
-def get_wikidata_uri(entity_text, log_dict):
-    if entity_text in log_dict:
-        exists_value = log_dict[entity_text]["exists_value"]
-        wikidata_label = log_dict[entity_text]["wikidata_label"]
-        wikidata_lemma = log_dict[entity_text]["wikidata_lemma"]
-        wikidata_id = log_dict[entity_text]["wikidata_id"]
-        return exists_value, wikidata_id, wikidata_lemma, wikidata_label
+def get_data_from_wikidata(entity_text):
     params = {
         'action': 'wbsearchentities',
         'language': 'en',
@@ -124,25 +46,22 @@ def get_wikidata_uri(entity_text, log_dict):
         'search': entity_text 
     }
     url = 'https://www.wikidata.org/w/api.php'
-    time.sleep(SLEEP_TIME)
-    r = requests.get(url, params=params)
-    if len(r.json()["search"]) < 1:
-        exists_value = ""
-        wikidata_label = ""
-        wikidata_lemma = ""
-        wikidata_id = ""
-        append_to_logfile(entity_text, exists_value, wikidata_label, wikidata_lemma, wikidata_id)
-        return exists_value, wikidata_id, wikidata_lemma, wikidata_label
-    
-    exists_value = True
-    page_info = r.json()["search"][0]
-    wikidata_id = page_info["id"]
-    wikidata_lemma = page_info["display"]["label"]["value"]
+    print(entity_text, url)
+    time.sleep(SLEEP_TIME_FETCH_PAGE)
+    wikidata_data = requests.get(url, params=params)
+    return wikidata_data
 
+
+def get_wikidata_label(wikidata_id, entity_label):
     endpoint = "https://query.wikidata.org/sparql"
     sparql = SPARQLWrapper(endpoint)
     sparql.setReturnFormat(JSON)
-    wikidata_categories = {"Q5": "PER", "Q178885": "PER", "Q17334923": "LOC", "Q2221906": "LOC"}
+    if entity_label == "PER":
+        wikidata_categories = {"Q5": "PER", "Q178885": "PER"} 
+    elif entity_label == "LOC":
+        wikidata_categories = {"Q123349660": "LOC", "Q17334923": "LOC", "Q2221906": "LOC"}
+    else:
+        wikidata_categories = {}
     wikidata_label = ""
     for category in wikidata_categories:
         query = f"""
@@ -161,14 +80,56 @@ def get_wikidata_uri(entity_text, log_dict):
       ?cls wdt:P279* wd:{category} .
     }}
         """
-        time.sleep(SLEEP_TIME)
+        time.sleep(SLEEP_TIME_GET_LABEL)
         sparql.setQuery(query)
         results = sparql.query().convert()
         if results['boolean']:
             wikidata_label = wikidata_categories[category]
             break
-    append_to_logfile(entity_text, exists_value, wikidata_label, wikidata_lemma, wikidata_id)
-    return exists_value, wikidata_id, wikidata_lemma, wikidata_label
+    return wikidata_label
+
+
+def get_wikidata_data(entity_text, entity_label, log_dict):
+    if entity_text in log_dict:
+        return(log_dict[entity_text]["exists_value"],
+               log_dict[entity_text]["wikidata_id"],
+               log_dict[entity_text]["wikidata_label"],
+               log_dict[entity_text]["wikidata_lemma"])
+    wikidata_data = get_data_from_wikidata(entity_text)
+    print("1")
+    if len(wikidata_data.json()["search"]) < 1:
+        print("2")
+        append_to_logfile(entity_text, "", "", "", "", log_dict)
+        return "", "", "", ""
+    print("3")
+    exists_value = True
+    wikidata_data_id = 0
+    page_info = wikidata_data.json()["search"][0]
+    wikidata_id = page_info["id"]
+    wikidata_label = get_wikidata_label(wikidata_id, entity_label)
+    wikidata_lemma = page_info["display"]["label"]["value"]
+    print([x["id"] for x in wikidata_data.json()["search"]])
+    print("4", wikidata_data_id, entity_label, f'"{wikidata_label}"', wikidata_lemma, wikidata_id)
+    if wikidata_label != entity_label and entity_label in ["LOC", "PER"] and len(wikidata_data.json()["search"]) > 1:
+        page_info = wikidata_data.json()["search"][1]
+        reserve_label = get_wikidata_label(page_info["id"], entity_label)
+        print(f"5 also tested {page_info['id']}: \"{reserve_label}\"") 
+        if reserve_label == entity_label:
+            wikidata_id = page_info["id"]
+            wikidata_label = reserve_label
+            wikidata_lemma = page_info["display"]["label"]["value"]
+        elif len(wikidata_data.json()["search"]) > 2:
+            page_info = wikidata_data.json()["search"][2]
+            reserve_label = get_wikidata_label(page_info["id"], entity_label)
+            print(f"6 also tested {page_info['id']}: \"{reserve_label}\"")
+            if reserve_label == entity_label:
+                wikidata_id = page_info["id"]
+                wikidata_label = reserve_label
+                wikidata_lemma = page_info["display"]["label"]["value"]
+
+    print("7", wikidata_data_id, entity_label, f'"{wikidata_label}"', wikidata_lemma, wikidata_id)
+    append_to_logfile(entity_text, exists_value, wikidata_id, wikidata_label, wikidata_lemma, log_dict)
+    return exists_value, wikidata_id, wikidata_label, wikidata_lemma
     
 
 recognition_entities = utils.read_machine_analysis(sys.stdin)
@@ -180,11 +141,11 @@ for line_dict in recognition_entities:
     for entity_label in line_dict:
         for entity_text in line_dict[entity_label]:
            for counter in range(0, line_dict[entity_label][entity_text]):
-               exists_value, wikidata_id, wikidata_lemma, wikidata_label = get_wikidata_uri(entity_text, log_dict)
+               exists_value, wikidata_id, wikidata_label, wikidata_lemma = get_wikidata_data(entity_text, entity_label, log_dict)
                if not exists_value:
                    print(f"Sorry, no page exists for entity: {entity_text}", file=sys.stderr)
                elif wikidata_label != entity_label:
-                   print(f"Sorry, page entity label ({wikidata_label}) does not match {entity_label} for entity {entity_text}", file=sys.stderr)
+                   print(f"Sorry, page entity label ({wikidata_label}) does not match {entity_label} for entity {entity_text}/{wikidata_lemma}", file=sys.stderr)
                else:
                    entities_list.append({"line_nbr": line_nbr,
                                          "entity_label": entity_label,
