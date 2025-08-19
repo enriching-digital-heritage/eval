@@ -14,20 +14,17 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 LOGFILE_NAME = "/home/erikt/projects/enriching/data/wikidata_log.txt"
-SLEEP_TIME_GET_LABEL = 30
+SLEEP_TIME_GET_LABEL = 61
 SLEEP_TIME_FETCH_PAGE = 5
 
 def read_logfile():
+    """Read previously looked up Wikidata data from logfile and return them in a dict"""
     log_df = pl.read_csv(LOGFILE_NAME)
-    log_df_columns = log_df.columns
-    log_dict = {}
-    for row_list in log_df.iter_rows():
-        row_dict = dict(zip(log_df_columns, row_list))
-        log_dict[row_dict["entity_text"]] = row_dict
-    return log_dict
+    return {row_dict["entity_text"]: row_dict for row_dict in log_df.to_dicts()}
 
 
 def append_to_logfile(entity_text, exists_value, wikidata_id, wikidata_label, wikidata_lemma, log_dict):
+    """Add new Wikidata information to logfile and current log dictionary"""
     log_dict[entity_text] = {"exists_value": "True" if exists_value else "",
                              "wikidata_label": wikidata_label,
                              "wikidata_lemma": wikidata_lemma,
@@ -39,6 +36,7 @@ def append_to_logfile(entity_text, exists_value, wikidata_id, wikidata_label, wi
 
 
 def get_data_from_wikidata(entity_text):
+    """Read Wikidata data on entity_text and return it"""
     params = {
         'action': 'wbsearchentities',
         'language': 'en',
@@ -53,6 +51,7 @@ def get_data_from_wikidata(entity_text):
 
 
 def get_wikidata_label(wikidata_id, entity_label):
+    """Find out possible entity label (PER/LOC) of Wikidata page with id wikidata_id. Expensive"""
     endpoint = "https://query.wikidata.org/sparql"
     sparql = SPARQLWrapper(endpoint)
     sparql.setReturnFormat(JSON)
@@ -82,6 +81,7 @@ def get_wikidata_label(wikidata_id, entity_label):
         """
         time.sleep(SLEEP_TIME_GET_LABEL)
         sparql.setQuery(query)
+        print(f"firing sparql query for {wikidata_id} with category {category} after sleeping {SLEEP_TIME_GET_LABEL} seconds")
         results = sparql.query().convert()
         if results['boolean']:
             wikidata_label = wikidata_categories[category]
@@ -90,6 +90,7 @@ def get_wikidata_label(wikidata_id, entity_label):
 
 
 def get_wikidata_data(entity_text, entity_label, log_dict):
+    """Get Wikidata data for entity_text and return them. Lookup up to two alternatives if the entity label does not match. Very expensive"""
     if entity_text in log_dict:
         return(log_dict[entity_text]["exists_value"],
                log_dict[entity_text]["wikidata_id"],
