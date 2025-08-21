@@ -15,10 +15,13 @@ def read_lines_from_stdin():
 
 def read_lines_from_file(file_name):
     """Read lines from the file file_name, return as list of strings"""
-    with open(file_name, "r") as file_handle:
-        lines = [line.strip() for line in file_handle]
-    file_handle.close()
-    return lines
+    if type(file_name) != str:
+        return read_lines_from_stdin()
+    else:
+        with open(file_name, "r") as file_handle:
+            lines = [line.strip() for line in file_handle]
+        file_handle.close()
+        return lines
 
 
 ENTITY_LABELS = ["CARDINAL", "DATE", "EVENT", "FAC", "GPE", "LANGUAGE", "LAW", "LOC", "LOCATION", "MISC", "NORP", "ORDINAL", "ORG", "PER", "PERSON", "PRODUCT", "WORK_OF_ART"]
@@ -61,12 +64,9 @@ def get_entity_text(tokens, token_id):
 
 def read_machine_analysis(file_name):
     """Read all entities from an entity string and return them in a list"""
-    if type(file_name) == str:
-        lines = read_lines_from_file(file_name)
-    else:
-        lines = read_lines_from_stdin()
+    data_lines = read_lines_from_file(file_name)
     entities = []
-    for line in lines:
+    for line in data_lines:
         if regex.search("Entities:", line):
             tokens = line.split()
             current_entities = {}
@@ -80,3 +80,56 @@ def read_machine_analysis(file_name):
                     current_entities = add_entity(current_entities, entity_label, entity_text)
             entities.append(current_entities)
     return entities
+
+
+DOC_SEPARATOR = "-DOCSTART-"
+TRANSLATE_ANNOTATION_LABEL = {'p': 'p', 'l': 'l', 'g': 'l', 'f': 'l',
+                              'c': 'c', 'd': 'd', 'o': 'o', 'w': 'w', '.': '.'}
+
+
+def add_text(texts, entities, current_text, current_entities, current_entity_text, current_entity_label):
+    """Add current entity to entities list if it is non-empty and return empty values for other parameter arguments"""
+    if current_text != "":
+        texts.append(current_text)
+        if current_entity_label:
+            current_entities = add_entity(current_entities, current_entity_label, current_entity_text)
+        entities.append(current_entities)
+    return("", {}, "", "")
+
+
+def read_annotations(file_name):
+    """Read annotations from file or stdin and return the texts and the entities"""
+    texts = []
+    entities = []
+    current_text = ""
+    current_entities = {}
+    current_entity_label = ""
+    current_entity_text = ""
+
+    data_lines = read_lines_from_file(file_name)
+    for line in data_lines:
+        if regex.search(DOC_SEPARATOR, line):
+            current_text, current_entities, current_entity_text, current_entity_label = add_text(texts, entities, current_text, current_entities, current_entity_text, current_entity_label)
+        elif len(line) == 0:
+            if current_entity_label:
+                current_entities = add_entity(current_entities, current_entity_label, current_entity_text)
+                current_entity_label = ""
+                current_entity_text = ""
+        else:
+            (token_label, token_text) = line.split()
+            token_label = TRANSLATE_ANNOTATION_LABEL[token_label]
+            current_text = token_text if current_text == "" else current_text + " " + token_text
+            if token_label == ".":
+                if current_entity_label:
+                    current_entities = add_entity(current_entities, current_entity_label, current_entity_text)
+                current_entity_label = ""
+                current_entity_text = ""
+            elif token_label == current_entity_label:
+                current_entity_text = current_entity_text + " " + token_text
+            else:
+                if current_entity_label:
+                    current_entities = add_entity(current_entities, current_entity_label, current_entity_text)
+                current_entity_label = token_label
+                current_entity_text = token_text
+    add_text(texts, entities, current_text, current_entities, current_entity_text, current_entity_label)
+    return texts, entities
