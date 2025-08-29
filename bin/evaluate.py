@@ -5,6 +5,7 @@
 
 
 import argparse
+import distance
 import regex
 import spacy
 import sys
@@ -20,7 +21,7 @@ def add_text(texts, entities, current_text, current_entities, current_entity_tex
     return("", {}, "", "")
  
 
-TRANSLATE_ANNOTATION_LABEL = {'p': 'p', 'l': 'l', 'g': 'l', 'f': 'l', 
+TRANSLATE_ANNOTATION_LABEL = {'p': 'PER', 'l': 'LOC', 'g': 'LOC', 'f': 'LOC', 
                               'c': 'c', 'd': 'd', 'o': 'o', 'w': 'w', '.': '.'}
 
 
@@ -79,6 +80,10 @@ for label in ['PER', 'LOC']:
             for token in gold_entities[i][label]:
                 if not token in machine_entities[i][label]:
                     missing_count[label] += gold_entities[i][label][token]
+                    for machine_token in machine_entities[i][label]:
+                        levenshtein = round(distance.levenshtein(token, machine_token)/max(len(token), len(machine_token)), 2)
+                        if levenshtein < 0.3:
+                             print(f"{levenshtein} {token}; {machine_token}")
                 else:
                     correct_count[label] += min(gold_entities[i][label][token],
                                          machine_entities[i][label][token])

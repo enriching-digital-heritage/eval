@@ -20,12 +20,12 @@ The British Museum disambiguation dataset contains as many entities as the recog
 
 |   | System | Time | Precision:P | Recall:P | F1:P | Precision:L | Recall:L | F1:L |
 | - | ------ | ---: | :---------: | :------: | :--: | :---------: | :------: | :--: |
-| 1. | NameTag 3 | 12.4 sec | 85.3% | 80.9% | 83.0 | 72.7% | 68.1% | 70.3 |
+| 1. | NameTag 3 | 12.4 sec | 85.3% | 80.9% | 83.0 | 75.0% | 70.2% | 72.5 |
 | 2. | Spacy (trf) + | 2.3 sec | 75.9% | 71.3% | 73.5 | 54.2% | 55.3% | 54.7 |
 | 3. | Spacy (trf) | 2.4 sec | 75.9% | 71.3% | 73.5 | 53.7% | 46.8% | 50.0 |
-| 4. | gpt-oss 20b | 30 min 52 sec | 76.7% | 60.0% | 67.3 | 57.1% | 34.0% | 42.6 |
-| 5. | Llama 3.3 | &nbsp; 28 min 33 sec | 64.7% | 47.8% | 55.0 | 41.2% | 29.8% | 34.6 |
-| 6. | Dandelion | 12.5 sec | 78.3% | 31.3% | 44.7 | 70.4% | 40.4% | 51.3 |
+| 4. | gpt-oss 20b | 30 min 52 sec | 83.3% | 65.2% | 73.1 | 57.1% | 34.0% | 42.6 |
+| 5. | Llama 3.3 | &nbsp; 28 min 33 sec | 67.1% | 49.6% | 57.0 | 41.2% | 29.8% | 34.6 |
+| 6. | Dandelion | 12.5 sec | 78.3% | 31.3% | 44.7 | 74.1% | 42.6% | 54.1 |
 
 The :P-related stats concern Person labels while the :L-related stats concern Location labels
 
@@ -35,11 +35,11 @@ The :P-related stats concern Person labels while the :L-related stats concern Lo
 
 |   | System | Time | Precision:P | Recall:P | F1:P | Precision:L | Recall:L | F1:L |
 | - | ------ | ---: | :---------: | :------: | :--: | :---------: | :------: | :--: |
-| 1. | gpt-oss 20b | 1 hr 2 min 9 sec | 89.5% | 96.0% | 92.6 | 40.4% | 60.4% | 48.4 |
-| 2. | Spacy (trf) | 2.6 sec | 81.5% | 92.1% | 86.5 | 20.9% | 20.9% | 20.9 |
-| 3. | Llama 3.3 | 38 min 12 sec | 81.9% | 92.1% | 86.7 | 31.1% | 54.9% | 39.7 |
-| 4. | Dandelion | 11.8 sec | 94.0% | 71.2% | 81.0 | 6.8% | 13.2% | 9.0 |
-| 5. | NameTag 3 | 12.2 sec | 87.2% | 73.4% | 79.7 | 49.0% | 78.0% | 60.2 |
+| 1. | gpt-oss 20b | 1 hr 2 min 9 sec | 90.5% | 96.6% | 93.2 | 58.1% | 86.8% | 69.6 |
+| 2. | Llama 3.3 | 38 min 12 sec | 81.9% | 92.1% | 86.7 | 46.6% | 82.4% | 59.5 |
+| 3. | Spacy (trf) | 2.6 sec | 81.0% | 91.5% | 85.9 | 44.0% | 44.0% | 44.0 |
+| 4. | Dandelion | 11.8 sec | 94.8% | 71.8% | 81.7 | 7.3% | 14.3 | 9.7 |
+| 5. | NameTag 3 | 12.2 sec | 86.6% | 72.9% | 79.2 | 49.0% | 78.0% | 60.2 |
 
 #### Disambiguation: British Museum data
 

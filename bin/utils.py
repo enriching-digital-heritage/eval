@@ -53,7 +53,7 @@ def get_entity_text(tokens, token_id):
         token_id += 1
         if regex.sub(":$", "", tokens[token_id]) in ENTITY_LABELS:
             break
-        elif regex.search("[A-Z][A-Z][A-Z]", tokens[token_id]) and tokens[token_id] not in tokens_seen:
+        elif regex.search("^[A-Z][A-Z][A-Z][A-Z]*$", tokens[token_id]) and tokens[token_id] not in tokens_seen:
             tokens_seen.append(tokens[token_id])
             print(f"Suspicious entity token: {tokens[token_id]}; is it a label?")
         entity_text += " " + tokens[token_id]
