@@ -5,6 +5,7 @@
 
 
 import argparse
+import distance
 import polars as pl
 import regex
 import sys
@@ -53,9 +54,19 @@ for target_entity_label in ENTITY_LABELS:
             if entity in machine_analysis_list:
                 correct += 1
                 machine_analysis_list.remove(entity)
+                entity["matched"] = True
             else:
                 missing += 1
     wrong = len([entity for entity in machine_analysis_list if entity["entity_label"] == target_entity_label])
+    for machine_entity in machine_analysis_list:
+        if machine_entity["entity_label"] == target_entity_label:
+            for annotation_entity in annotations_list:
+                if annotation_entity["entity_label"] == target_entity_label and machine_entity["line_nbr"] == annotation_entity["line_nbr"] and "matched" not in entity:
+                    annotation_text = annotation_entity["entity_text"]
+                    machine_text = machine_entity["entity_text"]
+                    levenshtein = round(distance.levenshtein(annotation_text, machine_text)/max(len(annotation_text), len(machine_text)), 2)
+                    if levenshtein < 0.3 and levenshtein > 0:
+                         print(f"{levenshtein} {annotation_text}; {machine_text} {annotation_entity['dbpedia_uri']} {machine_entity['dbpedia_uri']}")
     if correct + wrong == 0:
         precision = 0
     else:

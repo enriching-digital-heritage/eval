@@ -41,7 +41,7 @@ The :P-related stats concern Person labels while the :L-related stats concern Lo
 | 4. | Dandelion | 11.8 sec | 94.8% | 71.8% | 81.7 | 7.3% | 14.3 | 9.7 |
 | 5. | NameTag 3 | 12.2 sec | 86.6% | 72.9% | 79.2 | 49.0% | 78.0% | 60.2 |
 
-#### Disambiguation: British Museum data
+#### Disambiguation: British Museum data (dbpedia)
 
 |   | System | Time | Precision:P | Recall:P | F1:P | Precision:L | Recall:L | F1:L |
 | - | ------ | ---: | :---------: | :------: | :--: | :---------: | :------: | :--: |
